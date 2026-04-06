@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brawl Stars Battle Database</title>
+    <link rel="stylesheet" href="style.css">
+    
+    
+</head>
+<body>
+
+    <header><h1>BATTLE DATABASE</h1></header>
+
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Search Brawler..." onkeyup="filterBrawlers()">
+        <select id="filterRarity" onchange="filterBrawlers()">
+            <option value="all">All Rarities</option>
+            <option value="Ultra-Legendary">Ultra Legendary</option>
+            <option value="Legendary">Legendary</option>
+            <option value="Mythic">Mythic</option>
+            <option value="Epic">Epic</option>
+            <option value="Super-Rare">Super Rare</option>
+            <option value="Rare">Rare</option>
+        </select>
+    </div>
+
+    <div class="brawler-grid" id="brawlerGrid"></div>
+
+    <div id="brawlerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div style="flex: 1; min-width: 250px;">
+                <img id="mImg" src="" style="width: 100%; border-radius: 20px; height: 300px; object-fit: contain; background: #111;">
+                <h2 id="mName" style="font-size: 3rem; margin: 10px 0;"></h2>
+                <button id="skinToggle" class="skin-btn" onclick="toggleSkin()">Change Skin</button>
+            </div>
+            <div style="flex: 1; min-width: 250px; text-align: left;">
+                <h3 id="mRarity" style="font-size: 1.5rem; margin: 0;"></h3>
+                <p><strong>Class:</strong> <span id="mClass"></span></p>
+                <hr border="1" color="#444">
+                <label>Health: <span id="mHPVal"></span></label>
+                <div class="stat-bar"><div id="mHPBar" class="fill"></div></div>
+                <label>Damage: <span id="mDMGVal"></span></label>
+                <div class="stat-bar"><div id="mDMGBar" class="fill" style="background: #f44336;"></div></div>
+            </div>
+        </div>
+    </div>
+
+	<script>
+const brawlers = [
+    // ULTRA LEGENDARY
+    { name: "Sirius", rarity: "Ultra-Legendary", class: "Cosmic", hp: 9000, dmg: 3000, img: "sirius.jpeg", skins: ["sirius.jpeg"] },
+    { name: "Kaze", rarity: "Ultra-Legendary", class: "Elemental", hp: 7500, dmg: 2800, img: "kaze.jpeg", skins: ["kaze.jpeg","fruity-kaze.jpeg","gold_kaze.jpeg","silver-kaze.jpeg"] },
+
+    // LEGENDARY
+    { name: "Leon", rarity: "Legendary", class: "Assassin", hp: 6400, dmg: 1920, img: "leon.jpeg", skins: ["leon.jpeg","tiger_leon.jpeg","grafiti_leon.jpeg","silver_leon.jpeg","dino_leon.jpeg","mecha_leon.jpeg","gold_leon.jpeg","shark_leon.jpeg","wolf_leon.jpeg","champion_leon.jpeg","bluewolf_leon.jpeg","duck_leon.jpeg","phantom_leon.jpeg"] },
+    { name: "Crow", rarity: "Legendary", class: "Assassin", hp: 4800, dmg: 640, img: "crow.jpeg", skins: ["crow.jpeg","gold_crow.jpeg","phoenix_crow.jpeg","mecha_crow.jpeg","china_crow.jpeg","hero_crow.jpeg","poison_crow.jpeg","silver_crow.jpeg","mav_crow.jpeg","doctor_crow.jpeg"] },
+    { name: "Spike", rarity: "Legendary", class: "Marksman", hp: 4800, dmg: 2500, img: "spike.jpeg", skins: ["spike.jpeg","sakura_spike.jpeg","cartoon_spike.jpeg","silver_spike.jpeg","pyro_spike.jpeg","trash_spike.jpeg","mask_spike.jpeg","dark_spike.jpeg","gold_spike.jpeg","logmas_spike.jpeg","poop_spike.jpeg"] },
+    { name: "Amber", rarity: "Legendary", class: "Controller", hp: 6400, dmg: 400, img: "amber.jpeg", skins: ["amber.jpeg","gold_amber.jpeg","silver_amber.jpeg","ice_amber.jpeg","sword_amber.jpeg","skate_amber.jpeg"] },
+    { name: "Meg", rarity: "Legendary", class: "Tank", hp: 8000, dmg: 600, img: "meg.jpeg", skins: ["meg.jpeg","gold_meg.jpeg","silver_meg.jpeg","divine_meg.jpeg","mega_meg.jpeg","truck_meg.jpeg","jaguar_meg.jpeg","beetle_meg.jpeg"] },
+    { name: "Surge", rarity: "Legendary", class: "Damage Dealer", hp: 6000, dmg: 2360, img: "surge.jpeg", skins: ["surge.jpeg","gold_surge.jpeg","silver_surge.jpeg","blue_surge.jpeg","buzz_surge.jpeg","hero_surge.jpeg","gene_surge.jpeg","kraken_surge.jpeg","banana_surge","cart_surge.jpeg"] },
+    { name: "Chester", rarity: "Legendary", class: "Damage Dealer", hp: 7000, dmg: 1280, img: "chester.jpeg", skins: ["chester.jpeg","gold_chester.jpeg","silver_chester.jpeg","uno_chester.jpeg","forest_chester.jpeg","stone_chester.jpeg","lunar_chester.jpeg"] },
+    { name: "Cordelius", rarity: "Legendary", class: "Assassin", hp: 6400, dmg: 1460, img: "cordelius.jpeg", skins: ["cordelius.jpeg","cartoon_cordelius.jpeg","silver_cordelius.jpeg","gold_cordelius.jpeg","poison_cordelius.jpeg","odin_cordelius.jpeg","sporemind_cordelius.jpeg"] },
+    { name: "Kit", rarity: "Legendary", class: "Support", hp: 6000, dmg: 1600, img: "kit.jpeg", skins: ["kit.jpeg","battle_kit","silver_kit.jpeg","gold_kit.jpeg"] },
+    { name: "Draco", rarity: "Legendary", class: "Tank", hp: 11000, dmg: 2400, img: "draco.jpeg", skins: ["draco.jpeg","knight_draco.jpeg","gold_draco.jpeg","silver_draco.jpeg"] },
+    { name: "Kenji", rarity: "Legendary", class: "Assassin", hp: 7000, dmg: 2000, img: "kenji.jpeg", skins: ["kenji.jpeg","gold_kenji.jpeg","gold_kenji.jpeg","oni_kenji.jpeg","mecha_kenji.jpeg"] },
+    { name: "Sandy", rarity: "Legendary", class: "Controller", hp: 7600, dmg: 1800, img: "sandy.jpeg", skins: ["sandy.jpeg","koya_sandy.jpeg","octo_sandy.jpeg","gold_sandy.jpeg","night_sandy.jpeg","silver_sandy.jpeg"] },
+    { name: "Pierce", rarity: "Legendary", class: "Marksman", hp: 5000, dmg: 3500, img: "pierce.jpeg", skins: ["pierce.jpeg"] },
+
+    // MYTHIC
+    { name: "Tara", rarity: "Mythic", class: "Damage Dealer", hp: 6200, dmg: 1320, img: "tara.jpeg", skins: ["tara.jpeg","gold_tara.jpeg","silver_tara.jpeg","card_tara.jpeg","ninja_tara.jpeg"] },
+    { name: "Gene", rarity: "Mythic", class: "Controller", hp: 7200, dmg: 2000, img: "gene.jpeg", skins: ["gene.jpeg","silver_gene.jpeg","dark_gene.jpeg","angel_gene.jpeg","gold_gene.jpeg","djin_gene.jpeg"] },
+    { name: "Max", rarity: "Mythic", class: "Support", hp: 6600, dmg: 640, img: "max.jpeg", skins: ["max.jpeg","silver_max.jpeg","gold_max.jpeg","angel_max.jpeg"] },
+    { name: "Mr. P", rarity: "Mythic", class: "Controller", hp: 6800, dmg: 1520, img: "mrp.jpeg", skins: ["mrp.jpeg","gold_mrp.jpeg","silver_mrp.jpeg","dragon_mrp.jpeg","agent_mrp.jpeg"] },
+    { name: "Sprout", rarity: "Mythic", class: "Artillery", hp: 6000, dmg: 1960, img: "sprout.jpeg", skins: ["sprout.jpeg","silver_sprout.jpeg","gold_sprout.jpeg"] },
+    { name: "Byron", rarity: "Mythic", class: "Support", hp: 4800, dmg: 760, img: "byron.jpeg", skins: ["byron.jpeg","gold_byron.jpeg","silver_byron.jpeg","dark_byron.jpeg"] },
+    { name: "Squeak", rarity: "Mythic", class: "Controller", hp: 7200, dmg: 2160, img: "squeak.jpeg", skins: ["squeak.jpeg","silver_squeak.jpeg","gold_squeak.jpeg","phantom_squeak.jpeg"] },
+    { name: "Fang", rarity: "Mythic", class: "Assassin", hp: 8600, dmg: 2720, img: "fang.jpeg", skins: ["fang.jpeg","gold_fang.jpeg","silver_fang.jpeg","dragon_fang.jpeg","the_fang.jpeg"] },
+    { name: "Eve", rarity: "Mythic", class: "Damage Dealer", hp: 6000, dmg: 1920, img: "eve.jpeg", skins: ["eve.jpeg","silver_eve.jpeg","gold_eve.jpeg"] },
+    { name: "Janet", rarity: "Mythic", class: "Marksman", hp: 6800, dmg: 1880, img: "janet.jpeg", skins: ["janet.jpeg","silver_janet.jpeg","gold_janet.jpeg"] },
+    { name: "Otis", rarity: "Mythic", class: "Controller", hp: 6800, dmg: 1760, img: "otis.jpeg", skins: ["otis.jpeg","gold_otis.jpeg","silver_otis.jpeg","champ_otis.jpeg"] },
+    { name: "Buster", rarity: "Mythic", class: "Tank", hp: 10400, dmg: 2640, img: "buster.jpeg", skins: ["buster.jpeg","silver_buster.jpeg","gold_buster.jpeg"] },
+    { name: "Gray", rarity: "Mythic", class: "Support", hp: 6600, dmg: 2320, img: "gray.jpeg", skins: ["gray.jpeg","gold_gray.jpeg","silver_gray.jpeg","samurai_gray.jpeg"] },
+    { name: "Willow", rarity: "Mythic", class: "Controller", hp: 5600, dmg: 1800, img: "willow.jpeg", skins: ["willow.jpeg","silver_willow.jpeg","gold_willow.jpeg"] },
+    { name: "Doug", rarity: "Mythic", class: "Support", hp: 10000, dmg: 2400, img: "doug.jpeg", skins: ["doug.jpeg","pirate_doug.jpeg","gold_doug.jpeg","silver_doug.jpeg"] },
+    { name: "Chuck", rarity: "Mythic", class: "Controller", hp: 9000, dmg: 2160, img: "chuck.jpeg", skins: ["chuck.jpeg","silver_chuck.jpeg","scorpion_chuck.jpeg","gold_chuck.jpeg"] },
+    { name: "Mico", rarity: "Mythic", class: "Assassin", hp: 6000, dmg: 2180, img: "mico.jpeg", skins: ["mico.jpeg","wukong_mico.jpeg","gold_mico.jpeg","silver_mico.jpeg"] },
+    { name: "Melodie", rarity: "Mythic", class: "Assassin", hp: 8200, dmg: 920, img: "melodie.jpeg", skins: ["melodie.jpeg","silver_melodie.jpeg","gold_melodie.jpeg"] },
+    { name: "Lily", rarity: "Mythic", class: "Assassin", hp: 8400, dmg: 2400, img: "lily.jpeg", skins: ["lily.jpeg","silver_lily.jpeg","gold_lily.jpeg"] },
+    { name: "Clancy", rarity: "Mythic", class: "Damage Dealer", hp: 6600, dmg: 1200, img: "clancy.jpeg", skins: ["clancy.jpeg","silver_clancy.jpeg","gold_clancy.jpeg"] },
+    { name: "Moe", rarity: "Mythic", class: "Artillery", hp: 6400, dmg: 1000, img: "moe.jpeg", skins: ["moe.jpeg","silver_moe.jpeg","gold_moe.jpeg"] },
+    { name: "Mortis", rarity: "Mythic", class: "Assassin", hp: 7600, dmg: 1880, img: "mortis.jpeg", skins: ["mortis.jpeg","","","","","",""] },
+    { name: "Lou", rarity: "Mythic", class: "Controller", hp: 6400, dmg: 1760, img: "lou.jpeg", skins: ["lou.jpeg"] },
+    { name: "Ruffs", rarity: "Mythic", class: "Support", hp: 6400, dmg: 1680, img: "ruffs.jpeg", skins: ["ruffs.jpeg"] },
+    { name: "Buzz", rarity: "Mythic", class: "Assassin", hp: 9600, dmg: 840, img: "buzz.jpeg", skins: ["buzz.jpeg"] },
+    { name: "R-T", rarity: "Mythic", class: "Damage Dealer", hp: 7800, dmg: 1400, img: "rt.jpeg", skins: ["rt.jpeg"] },
+    { name: "Charlie", rarity: "Mythic", class: "Controller", hp: 6600, dmg: 1520, img: "charlie.jpeg", skins: ["charlie.jpeg"] },
+    { name: "Glowy", rarity: "Mythic", class: "Support", hp: 6000, dmg: 1200, img: "glowy.jpeg", skins: ["glowy.jpeg"] },
+    { name: "Gigi", rarity: "Mythic", class: "Damage Dealer", hp: 7000, dmg: 2100, img: "gigi.jpeg", skins: ["gigi.jpeg"] },
+    { name: "Ziggy", rarity: "Mythic", class: "Assassin", hp: 6200, dmg: 2400, img: "ziggy.jpeg", skins: ["ziggy.jpeg"] },
+    { name: "Mina", rarity: "Mythic", class: "Artillery", hp: 5800, dmg: 1900, img: "mina.jpeg", skins: ["mina.jpeg"] },
+    { name: "Alli", rarity: "Mythic", class: "Controller", hp: 6800, dmg: 1600, img: "alli.jpeg", skins: ["alli.jpeg"] },
+    { name: "Jae-Young", rarity: "Mythic", class: "Marksman", hp: 5400, dmg: 3100, img: "jaeyoung.jpeg", skins: ["jaeyoung.jpeg"] },
+    { name: "Finx", rarity: "Mythic", class: "Assassin", hp: 7200, dmg: 2200, img: "finx.jpeg", skins: ["finx.jpeg"] },
+    { name: "Lumi", rarity: "Mythic", class: "Support", hp: 6500, dmg: 1300, img: "lumi.jpeg", skins: ["lumi.jpeg"] },
+    { name: "Ollie", rarity: "Mythic", class: "Damage Dealer", hp: 7400, dmg: 1950, img: "ollie.jpeg", skins: ["ollie.jpeg"] },
+    { name: "Juju", rarity: "Mythic", class: "Controller", hp: 6900, dmg: 1750, img: "juju.jpeg", skins: ["juju.jpeg"] },
+
+    // EPIC
+    { name: "Piper", rarity: "Epic", class: "Marksman", hp: 4800, dmg: 3400, img: "piper.jpeg", skins: ["piper.jpeg"] },
+    { name: "Pam", rarity: "Epic", class: "Support", hp: 9600, dmg: 520, img: "pam.jpeg", skins: ["pam.jpeg"] },
+    { name: "Frank", rarity: "Epic", class: "Tank", hp: 14000, dmg: 2480, img: "frank.jpeg", skins: ["frank.jpeg"] },
+    { name: "Bibi", rarity: "Epic", class: "Tank", hp: 9600, dmg: 2000, img: "bibi.jpeg", skins: ["bibi.jpeg"] },
+    { name: "Bea", rarity: "Epic", class: "Marksman", hp: 4800, dmg: 1600, img: "bea.jpeg", skins: ["bea.jpeg"] },
+    { name: "Nani", rarity: "Epic", class: "Marksman", hp: 4800, dmg: 1600, img: "nani.jpeg", skins: ["nani.jpeg"] },
+    { name: "Edgar", rarity: "Epic", class: "Assassin", hp: 6600, dmg: 1080, img: "edgar.jpeg", skins: ["edgar.jpeg"] },
+    { name: "Griff", rarity: "Epic", class: "Damage Dealer", hp: 6800, dmg: 520, img: "griff.jpeg", skins: ["griff.jpeg"] },
+    { name: "Grom", rarity: "Epic", class: "Artillery", hp: 6000, dmg: 2120, img: "grom.jpeg", skins: ["grom.jpeg"] },
+    { name: "Bonnie", rarity: "Epic", class: "Marksman", hp: 9600, dmg: 1160, img: "bonnie.jpeg", skins: ["bonnie.jpeg"] },
+    { name: "Gale", rarity: "Epic", class: "Controller", hp: 7600, dmg: 560, img: "gale.jpeg", skins: ["gale.jpeg"] },
+    { name: "Colette", rarity: "Epic", class: "Damage Dealer", hp: 6800, dmg: 1000, img: "colette.jpeg", skins: ["colette.jpeg"] },
+    { name: "Belle", rarity: "Epic", class: "Marksman", hp: 5200, dmg: 2080, img: "belle.jpeg", skins: ["belle.jpeg"] },
+    { name: "Ash", rarity: "Epic", class: "Tank", hp: 10400, dmg: 1600, img: "ash.jpeg", skins: ["ash.jpeg"] },
+    { name: "Lola", rarity: "Epic", class: "Damage Dealer", hp: 7600, dmg: 520, img: "lola.jpeg", skins: ["lola.jpeg"] },
+    { name: "Sam", rarity: "Epic", class: "Tank", hp: 10800, dmg: 1600, img: "sam.jpeg", skins: ["sam.jpeg"] },
+    { name: "Mandy", rarity: "Epic", class: "Marksman", hp: 5600, dmg: 2400, img: "mandy.jpeg", skins: ["mandy.jpeg"] },
+    { name: "Maisie", rarity: "Epic", class: "Marksman", hp: 7200, dmg: 2560, img: "maisie.jpeg", skins: ["maisie.jpeg"] },
+    { name: "Hank", rarity: "Epic", class: "Tank", hp: 11600, dmg: 4200, img: "hank.jpeg", skins: ["hank.jpeg"] },
+    { name: "Pearl", rarity: "Epic", class: "Damage Dealer", hp: 8400, dmg: 1520, img: "pearl.jpeg", skins: ["pearl.jpeg"] },
+    { name: "Angelo", rarity: "Epic", class: "Marksman", hp: 6000, dmg: 4400, img: "angelo.jpeg", skins: ["angelo.jpeg"] },
+    { name: "Berry", rarity: "Epic", class: "Support", hp: 5000, dmg: 1200, img: "berry.jpeg", skins: ["berry.jpeg"] },
+    { name: "Bo", rarity: "Epic", class: "Controller", hp: 7200, dmg: 1400, img: "bo.jpeg", skins: ["bo.jpeg"] },
+    { name: "Emz", rarity: "Epic", class: "Controller", hp: 7200, dmg: 1040, img: "emz.jpeg", skins: ["emz.jpeg"] },
+    { name: "Stu", rarity: "Epic", class: "Assassin", hp: 5800, dmg: 1620, img: "stu.jpeg", skins: ["stu.jpeg"] },
+    { name: "Larry & Lawrie", rarity: "Epic", class: "Artillery", hp: 6000, dmg: 1680, img: "larrylawrie.jpeg", skins: ["larrylawrie.jpeg"] },
+    { name: "Shade", rarity: "Epic", class: "Assassin", hp: 6600, dmg: 2200, img: "shade.jpeg", skins: ["shade.jpeg"] },
+    { name: "Meeple", rarity: "Epic", class: "Support", hp: 8000, dmg: 1100, img: "meeple.jpeg", skins: ["meeple.jpeg"] },
+    { name: "Trunk", rarity: "Epic", class: "Tank", hp: 11000, dmg: 1800, img: "trunk.jpeg", skins: ["trunk.jpeg"] },
+
+    // SUPER RARE
+    { name: "Rico", rarity: "Super-Rare", class: "Damage Dealer", hp: 5600, dmg: 640, img: "rico.jpeg", skins: ["rico.jpeg"] },
+    { name: "Darryl", rarity: "Super-Rare", class: "Tank", hp: 10600, dmg: 480, img: "darryl.jpeg", skins: ["darryl.jpeg"] },
+    { name: "Penny", rarity: "Super-Rare", class: "Artillery", hp: 6400, dmg: 1960, img: "penny.jpeg", skins: ["penny.jpeg"] },
+    { name: "Carl", rarity: "Super-Rare", class: "Damage Dealer", hp: 8800, dmg: 1480, img: "carl.jpeg", skins: ["carl.jpeg"] },
+    { name: "Jacky", rarity: "Super-Rare", class: "Tank", hp: 10000, dmg: 2480, img: "jacky.jpeg", skins: ["jacky.jpeg"] },
+    { name: "Gus", rarity: "Super-Rare", class: "Support", hp: 6400, dmg: 2000, img: "gus.jpeg", skins: ["gus.jpeg"] },
+    { name: "Tick", rarity: "Super-Rare", class: "Artillery", hp: 4400, dmg: 1920, img: "tick.jpeg", skins: ["tick.jpeg"] },
+    { name: "8-Bit", rarity: "Super-Rare", class: "Damage Dealer", hp: 10000, dmg: 640, img: "8bit.jpeg", skins: ["8bit.jpeg"] },
+    { name: "Jessie", rarity: "Super-Rare", class: "Controller", hp: 6000, dmg: 2120, img: "jessie.jpeg", skins: ["jessie.jpeg"] },
+    { name: "Dynamike", rarity: "Super-Rare", class: "Artillery", hp: 5600, dmg: 3200, img: "dyna.jpeg", skins: ["dyna.jpeg"] },
+
+    // RARE
+    { name: "El Primo", rarity: "Rare", class: "Tank", hp: 12000, dmg: 1500, img: "el primo.jpeg", skins: ["el primo.jpeg"] },
+    { name: "Barley", rarity: "Rare", class: "Artillery", hp: 4800, dmg: 1600, img: "barley.jpeg", skins: ["barley.jpeg"] },
+    { name: "Poco", rarity: "Rare", class: "Support", hp: 8000, dmg: 1600, img: "poco.jpeg", skins: ["poco.jpeg"] },
+    { name: "Rosa", rarity: "Rare", class: "Tank", hp: 10000, dmg: 1200, img: "rosa.jpeg", skins: ["rosa.jpeg"] },
+    { name: "Brock", rarity: "Rare", class: "Marksman", hp: 4800, dmg: 2320, img: "brock.jpeg", skins: ["brock.jpeg"] },
+    { name: "Bull", rarity: "Rare", class: "Tank", hp: 10000, dmg: 1760, img: "bull.jpeg", skins: ["bull.jpeg"] },
+    { name: "Colt", rarity: "Rare", class: "Marksman", hp: 5600, dmg: 720, img: "colt.jpeg", skins: ["colt.jpeg"] },
+    { name: "Nita", rarity: "Rare", class: "Damage Dealer", hp: 8000, dmg: 1920, img: "nita.jpeg", skins: ["nita.jpeg"] },
+
+    // STARTER
+    { name: "Shelly", rarity: "Starter", class: "Damage Dealer", hp: 7400, dmg: 3200, img: "shelly.jpeg", skins: ["shelly.jpeg"] }
+];
+
+        let currentBrawlerIndex = 0;
+        let currentSkinIndex = 0;
+
+        function renderGrid(data) {
+            const grid = document.getElementById('brawlerGrid');
+            grid.innerHTML = data.map((b) => {
+                const originalIndex = brawlers.findIndex(item => item.name === b.name);
+                return `
+                    <div class="card ${b.rarity}" onclick="openModal(${originalIndex})">
+                        <img src="${b.img}" onerror="this.src='https://via.placeholder.com/200?text=${b.name}'">
+                        <h2>${b.name}</h2>
+                        <div style="color:var(--${b.rarity.toLowerCase()})">${b.rarity.replace('-', ' ')}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openModal(index) {
+            currentBrawlerIndex = index;
+            currentSkinIndex = 0; // Reset to default skin
+            const b = brawlers[index];
+            
+            document.getElementById('mName').innerText = b.name;
+            document.getElementById('mImg').src = b.img;
+            document.getElementById('mRarity').innerText = b.rarity.replace('-', ' ');
+            document.getElementById('mRarity').style.color = `var(--${b.rarity.toLowerCase()})`;
+            document.getElementById('mClass').innerText = b.class;
+            document.getElementById('mHPVal').innerText = b.hp;
+            document.getElementById('mHPBar').style.width = (b.hp / 14000 * 100) + "%";
+            document.getElementById('mDMGVal').innerText = b.dmg;
+            document.getElementById('mDMGBar').style.width = (b.dmg / 4500 * 100) + "%";
+
+            // Hide skin button if no skins available
+            const skinBtn = document.getElementById('skinToggle');
+            skinBtn.style.display = (b.skins && b.skins.length > 1) ? "inline-block" : "none";
+
+            document.getElementById('brawlerModal').style.display = "block";
+        }
+
+        function toggleSkin() {
+            const b = brawlers[currentBrawlerIndex];
+            currentSkinIndex = (currentSkinIndex + 1) % b.skins.length;
+            document.getElementById('mImg').src = b.skins[currentSkinIndex];
+        }
+
+        function closeModal() { document.getElementById('brawlerModal').style.display = "none"; }
+
+        function filterBrawlers() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const r = document.getElementById('filterRarity').value;
+            const filtered = brawlers.filter(b => 
+                b.name.toLowerCase().includes(q) && (r === 'all' || b.rarity === r)
+            );
+            renderGrid(filtered);
+        }
+
+        renderGrid(brawlers);
+        window.onclick = (e) => { if(e.target == document.getElementById('brawlerModal')) closeModal(); }
+	</script>
+	<hr style="border: 2px solid #333; margin: 50px 0;">
+    <h2 style="font-size: 3rem;">ZONE D'ENTRAINEMENT (5 EXERCICES)</h2>
+    
+    <div class="exercise-section">
+        
+        <div class="ex-card">
+            <h3>Ex 1 : Verifier le Triangle Rectangle</h3>
+            <input type="number" id="ab" placeholder="AB">
+            <input type="number" id="ac" placeholder="AC">
+            <input type="number" id="bc" placeholder="BC">
+            <button class="skin-btn" onclick="checkTriangle()">Verifier</button>
+            <div id="res1" class="result"></div>
+        </div>
+
+        <div class="ex-card">
+            <h3>Ex 2 : Calcul de l'Hypothénuse (AB**2 + AC**2)</h3>
+            <input type="number" id="sideA" placeholder="Cote AB">
+            <input type="number" id="sideB" placeholder="Cote AC">
+            <button class="skin-btn" onclick="calcHypo()">Calculer BC</button>
+            <div id="res2" class="result"></div>
+        </div>
+
+        <div class="ex-card">
+            <h3>Ex 3 : Compteur de 'e'</h3>
+            <input type="text" id="wordInput" placeholder="Saisir un mot" style="width: 200px;">
+            <button class="skin-btn" onclick="countE()">Compter</button>
+            <div id="res3" class="result"></div>
+        </div>
+
+        <div class="ex-card">
+            <h3>Ex 4 : Jeu du Plus ou Moins (1-100)</h3>
+            <input type="number" id="guessInput" placeholder="Nombre ?">
+            <button class="skin-btn" onclick="playGame()">Deviner</button>
+            <button class="skin-btn" style="background: #444;" onclick="resetGame()">Reset</button>
+            <div id="res4" class="result"></div>
+        </div>
+
+        <div class="ex-card">
+            <h3>Ex 5 : QCM Brawl Stars</h3>
+            
+            <p>1. Quelle est la rarete de Leon ?</p>
+            <select id="q1">
+                <option value="wrong">Rare</option>
+                <option value="correct">Legendaire</option>
+                <option value="wrong">Epique</option>
+            </select>
+
+            <p>2. Ecris le nom du brawler qui ressemble a un cactus :</p>
+            <input type="text" id="q2" placeholder="Nom ?">
+
+            <p>3. Shelly est-elle le brawler de depart ?</p>
+            <button class="skin-btn" onclick="setQ3(true)">Vrai</button>
+            <button class="skin-btn" onclick="setQ3(false)">Faux</button>
+            
+            <br><br>
+            <button class="skin-btn" style="background: #f44336;" onclick="checkQCM()">Valider le QCM</button>
+            <div id="res5" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIQUE EXERCICES ---
+
+        // Ex 1
+        function checkTriangle() {
+            const ab = parseFloat(document.getElementById('ab').value);
+            const ac = parseFloat(document.getElementById('ac').value);
+            const bc = parseFloat(document.getElementById('bc').value);
+            const res = document.getElementById('res1');
+            
+            if (ab**2 + ac**2 === bc**2) res.innerText = "Le triangle est rectangle en A";
+            else if (ab**2 + bc**2 === ac**2) res.innerText = "Le triangle est rectangle en B";
+            else if (ac**2 + bc**2 === ab**2) res.innerText = "Le triangle est rectangle en C";
+            else res.innerText = "Ce n'est pas un triangle rectangle";
+        }
+
+        // Ex 2
+        function calcHypo() {
+            const a = parseFloat(document.getElementById('sideA').value);
+            const b = parseFloat(document.getElementById('sideB').value);
+            const h = Math.sqrt(a**2 + b**2);
+            document.getElementById('res2').innerText = "L'hypothenuse BC est : " + h.toFixed(2);
+        }
+
+        // Ex 3
+        function countE() {
+            const word = document.getElementById('wordInput').value;
+            const count = (word.match(/e/gi) || []).length;
+            document.getElementById('res3').innerText = `Il y a ${count} 'e' dans ce mot.`;
+        }
+
+        // Ex 4
+        let secretNum = Math.floor(Math.random() * 100) + 1;
+        function playGame() {
+            const guess = parseInt(document.getElementById('guessInput').value);
+            const res = document.getElementById('res4');
+            if (guess < secretNum) res.innerText = "C'est PLUS !";
+            else if (guess > secretNum) res.innerText = "C'est MOINS !";
+            else res.innerText = "BRAVO ! Le nombre était " + secretNum;
+        }
+        function resetGame() {
+            secretNum = Math.floor(Math.random() * 100) + 1;
+            document.getElementById('res4').innerText = "Nouveau nombre généré !";
+        }
+
+        // Ex 5
+        let q3Answer = null;
+        function setQ3(val) { q3Answer = val; }
+        
+        function checkQCM() {
+            let score = 0;
+            if (document.getElementById('q1').value === "correct") score++;
+            if (document.getElementById('q2').value.toLowerCase() === "spike") score++;
+            if (q3Answer === true) score++;
+            
+            document.getElementById('res5').innerText = `Ton score : ${score}/3`;
+        }
+
+        // --- GARDE TES FONCTIONS BRAWLER EXISTANTES ICI ---
+        // (Copie ici tout le code JS du menu précédent : renderGrid, openModal, etc.)
+    </script>
+</body>
+</html>
